@@ -628,10 +628,8 @@
                     freeUsers: currentList,
                     updatedAt: new Date().toISOString()
                 });
-                showToast("Texting2更新成功", actionText, "success");
             } catch (err) {
                 console.error("Error updating state: ", err);
-                showToast("儲存失敗", "無法同步至雲端", "error");
             }
         }
 
