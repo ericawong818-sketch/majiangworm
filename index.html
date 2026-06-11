@@ -617,7 +617,7 @@
 
             if (!db) {
                 localStorage.setItem(`${appId}-avails`, JSON.stringify(monthlyAvailabilities));
-                showToast("更新成功", actionText, "success");
+                showToast("Texting1更新成功", actionText, "success");
                 return;
             }
 
@@ -628,7 +628,7 @@
                     freeUsers: currentList,
                     updatedAt: new Date().toISOString()
                 });
-                showToast("更新成功", actionText, "success");
+                showToast("Texting2更新成功", actionText, "success");
             } catch (err) {
                 console.error("Error updating state: ", err);
                 showToast("儲存失敗", "無法同步至雲端", "error");
