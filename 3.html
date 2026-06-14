@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🀄 麻將蟲蟲咬手手 🀄 </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'Noto Sans TC', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981', // 翡翠麻雀綠
+                            600: '#059669',
+                            700: '#047857',
+                            navy: '#0f172a'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(241, 245, 249, 0.5); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(203, 213, 225, 0.8); border-radius: 8px; }
+        .perfect-day-glow {
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.45);
+            border: 2px solid #10b981 !important;
+            background-color: #f0fdf4 !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen font-sans flex flex-col antialiased">
+
+    <!-- HEADER -->
+    <header class="bg-brand-navy text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 p-2.5 rounded-2xl text-white transform hover:rotate-12 transition-transform duration-300">
+                    <span class="text-2xl font-black font-serif">🀄</span>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-black tracking-tight flex items-center gap-2">
+                        麻雀蟲蟲咬手手
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium"> 愛雀之人的極速約戰及戰績記帳日曆, 只要有 4 個人得閒就即時成團開枱！⚡</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2 bg-slate-800/80 px-4 py-2 rounded-xl border border-slate-700">
+                <span class="relative flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-500 opacity-75"></span>
+                    <span id="connection-indicator-dot" class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+                <span id="connection-status-text" class="text-xs font-semibold tracking-wide text-slate-300">雲端連線中...</span>
+            </div>
+        </div>
+    </header>
+
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <div class="relative flex items-center justify-center">
+            <div class="animate-spin rounded-full h-24 w-24 border-t-4 border-b-4 border-brand-500"></div>
+            <span class="text-4xl absolute animate-bounce select-none">🀄</span>
+        </div>
+        <h2 class="text-xl font-bold mt-6 tracking-wider">正在載入專屬打牌月曆...</h2>
+        <p class="text-sm text-slate-400 mt-2">正在與雲端資料庫進行實時同步</p>
+    </div>
+
+    <!-- MAIN BODY -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col gap-6">
+
+        <!-- STEP 1: USER IDENTIFICATION SELECTOR -->
+        <section class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        你是哪位雀友？🀄
+                    </h2>
+                    <p class="text-sm text-slate-500">先選擇你的頭像，然後直接點選下方月曆日期來標明「想打牌」的時間</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="openAddPlayerModal()" class="text-xs bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-2.5 rounded-xl font-bold transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-user-plus"></i> ➕ 新增雀友
+                    </button>
+                    <button onclick="openNicknameModal()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-xl font-medium transition flex items-center gap-1.5 border border-slate-200">
+                        <i class="fa-solid fa-user-pen"></i> ✏️ 修改名稱與牌章
+                    </button>
+                </div>
+            </div>
+
+            <!-- Friend Badges Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3" id="friend-selector-grid">
+                <!-- Javascript will render friends here dynamically -->
+            </div>
+        </section>
+
+        <!-- MAIN CALENDAR AND STATS SECTION -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Calendar Grid (Spans 8 cols) -->
+            <section class="lg:col-span-8 bg-white rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col">
+                <!-- Month Navigator Header -->
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+                    <button onclick="navigateMonth(-1)" class="p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition border border-slate-200/60 active:scale-95">
+                        <i class="fa-solid fa-chevron-left text-sm"></i>
+                    </button>
+                    <h3 id="calendar-month-year" class="text-xl font-extrabold text-slate-800 tracking-wide select-none">
+                        載入月份中...
+                    </h3>
+                    <button onclick="navigateMonth(1)" class="p-2.5 rounded-xl hover:bg-slate-100 text-slate-600 transition border border-slate-200/60 active:scale-95">
+                        <i class="fa-solid fa-chevron-right text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- Calendar Days of Week Label Header -->
+                <div class="grid grid-cols-7 text-center text-xs font-bold text-slate-400 mb-2 tracking-wider">
+                    <div class="text-red-500 py-1">日</div>
+                    <div class="py-1">一</div>
+                    <div class="py-1">二</div>
+                    <div class="py-1">三</div>
+                    <div class="py-1">四</div>
+                    <div class="py-1">五</div>
+                    <div class="text-blue-500 py-1">六</div>
+                </div>
+
+                <!-- Calendar Grid Container -->
+                <div id="calendar-grid" class="grid grid-cols-7 gap-1.5 sm:gap-2 flex-grow min-h-[360px]">
+                    <!-- Javascript will render monthly grid tiles dynamically here -->
+                </div>
+                
+                <!-- Quick Legend and tips -->
+                <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-4 text-xs text-slate-500 items-center justify-between">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-md bg-emerald-100 border border-emerald-300"></span> 4人或以上成團日</span>
+                        <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-md bg-slate-50 border border-slate-200"></span> 1-3位雀友得閒的日子</span>
+                        <span class="flex items-center gap-1"><span class="w-3.5 h-3.5 rounded-md bg-slate-100 border border-slate-300 opacity-50"></span> 過去的日子 (灰色標明)</span>
+                    </div>
+                    <div class="text-slate-400 italic">
+                        *再次點擊相同日期可取消標記。
+                    </div>
+                </div>
+            </section>
+
+            <!-- SIDEBAR DETAILS (Spans 4 cols) -->
+            <aside class="lg:col-span-4 flex flex-col gap-6">
+                
+                <!-- Gold Star Dates (4 friends) -->
+                <div class="bg-gradient-to-br from-brand-navy to-slate-900 text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
+                    <h4 class="text-base font-bold text-emerald-400 flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-trophy text-amber-400 animate-pulse"></i> 
+                        【大奇蹟日】 
+                    </h4>
+                    
+                    <div id="perfect-dates-list" class="space-y-2.5 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                        <!-- Rendered by JS -->
+                        <div class="text-slate-400 text-sm italic py-2">本月暫時未有足夠4人成團的日子，快點去標記你的時間啦！</div>
+                    </div>
+                </div>
+
+                <!-- 🏆 雀友戰績每月龍虎榜 -->
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+                    <h4 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                        <i class="fa-solid fa-trophy text-amber-500"></i> 
+                        每月龍虎榜
+                    </h4>
+                    <p class="text-xs text-slate-400 mb-4">統計當月開枱日子的輸贏總分 </p>
+                    
+                    <div id="leaderboard-container" class="space-y-3.5 max-h-[350px] overflow-y-auto custom-scrollbar pr-1">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-500 text-xs py-8 mt-12 border-t border-slate-800 text-center">
+        <p class="mb-2">© 2026 麻雀蟲蟲咬手手 | 專屬約打牌月曆. 版權所有全屬Alice同事.</p>
+        <p class="text-slate-600">實時同步由雲端安全驅動 • 自豪地為Alice的雀友服務 🀄</p>
+    </footer>
+
+    <!-- MODAL: NICKNAME & COLOR EDIT MODAL -->
+    <div id="nickname-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-xl transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-brand-navy text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    修改名字與牌章
+                </h3>
+                <button onclick="closeNicknameModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="nickname-form" onsubmit="saveNicknames(event)" class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-grow">
+                <p class="text-xs text-slate-500 mb-2">請在此修改名字並選取代表你的本命麻將牌!</p>
+                
+                <div class="space-y-4" id="nickname-inputs-container">
+                    <!-- Dynamic Inputs & Color selectors Generated by JS -->
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100">
+                    <button type="button" onclick="closeNicknameModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-semibold text-sm transition">
+                        取消
+                    </button>
+                    <button type="submit" class="bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm px-5 py-2 rounded-xl shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> 儲存並同步資料
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL FOR SCORE RECORDING -->
+    <div id="score-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-lg transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-brand-navy text-white px-6 py-4 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        📝 錄入戰績記帳
+                    </h3>
+                    <p id="score-modal-date" class="text-xs text-emerald-400 font-bold mt-0.5"></p>
+                </div>
+                <button onclick="closeScoreModal()" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between text-xs">
+                <div class="text-emerald-800 font-medium">
+                    💡 麻將為零和遊戲，所有人輸贏總分應剛好等於零。
+                </div>
+                <div id="live-sum-indicator" class="font-bold px-2.5 py-1 rounded-lg">
+                    總和: 0
+                </div>
+            </div>
+
+            <form id="score-form" onsubmit="saveScores(event)" class="flex-grow p-6 space-y-4 overflow-y-auto custom-scrollbar">
+                <input type="hidden" id="score-modal-date-val">
+                
+                <div class="space-y-3" id="score-inputs-container">
+                    <!-- Dynamic Score inputs populated by JS -->
+                </div>
+
+                <div class="pt-4 flex justify-between items-center sticky bottom-0 bg-white border-t border-slate-100">
+                    <button type="button" onclick="resetAllScoresInModal()" class="text-xs text-rose-500 hover:text-rose-700 font-bold transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left"></i> 快速清零
+                    </button>
+                    <div class="flex gap-3">
+                        <button type="button" onclick="closeScoreModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-semibold text-sm transition">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-2 rounded-xl shadow-md transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-check"></i> 儲存戰績
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW MODAL: ADD PLAYER MODAL -->
+    <div id="add-player-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-lg transform scale-95 transition-transform duration-300 overflow-hidden flex flex-col max-h-[85vh]">
+            <div class="bg-emerald-600 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus"></i> 新增雀友
+                </h3>
+                <button onclick="closeAddPlayerModal()" class="text-white/85 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <form id="add-player-form" onsubmit="executeAddPlayer(event)" class="p-6 space-y-5 overflow-y-auto custom-scrollbar flex-grow">
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2">雀友暱稱</label>
+                    <input type="text" id="add-player-name-input" required maxlength="12"
+                           class="w-full bg-slate-50 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400 rounded-xl border border-slate-200 px-4 py-3" 
+                           placeholder="輸入雀友名">
+                </div>
+                
+                <div>
+                    <span class="text-xs font-black text-slate-400 uppercase tracking-wider block mb-2">選取本命牌章：</span>
+                    <div id="add-player-tile-grid" class="flex flex-wrap gap-2 select-none justify-start bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <!-- Populated dynamically by JS with SVG tiles -->
+                    </div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-slate-100">
+                    <button type="button" onclick="closeAddPlayerModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-semibold text-sm transition">
+                        取消
+                    </button>
+                    <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm px-5 py-2 rounded-xl shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> 確認建立
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NEW MODAL: CUSTOM CONFIRMATION MODAL -->
+    <div id="custom-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-3xl shadow-xl w-full max-w-md transform scale-95 transition-transform duration-300 overflow-hidden">
+            <div class="bg-rose-600 text-white px-6 py-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 確定刪除雀友嗎？
+                </h3>
+            </div>
+            <div class="p-6 space-y-3">
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    你確定要將雀友 <span id="confirm-delete-name" class="font-black text-rose-600"></span> 從系統中永久刪除嗎？
+                </p>
+                <div class="text-xs text-rose-600 bg-rose-50 p-3.5 rounded-xl border border-rose-100 space-y-1">
+                    <p class="font-bold">⚠️ 注意事項：</p>
+                    <p class="leading-relaxed">1. 該雀友的所有有空日子標記將會一併清除。</p>
+                    <p class="leading-relaxed">2. 所有的歷史戰績記帳分數將完全清空，不可恢復！</p>
+                </div>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <button onclick="closeConfirmModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 font-semibold text-sm transition">
+                    取消
+                </button>
+                <button onclick="executeDeletePlayer()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm px-5 py-2 rounded-xl shadow-md transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-trash-can"></i> 永久刪除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST WRAPPER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+    <!-- FIREBASE & CORE APPLICATION LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Global state and UI references
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+        
+        // 優先讀取環境變數中的 appId，如果沒有則使用預設值
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'mahjong-story-group-demo';
+
+        // Dynamic State (Starting focus point)
+        let currentYearMonth = new Date(2026, 5, 1); 
+        let activeFriendIndex = null; // Default: null (must select a friend first)
+        
+        // 統一換算成香港天文台時區（Asia/Hong_Kong）
+        const hkTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Hong_Kong" });
+        const todayDateObj = new Date(hkTimeStr); 
+
+        // 把香港時間的年月日抽出來備用
+        const hkYear = todayDateObj.getFullYear();
+        const hkMonth = todayDateObj.getMonth(); // 0-indexed
+        const hkDay = todayDateObj.getDate();
+        
+        // 13 high-quality classic Hand-drawn 3D Mahjong SVG templates
+        window.getMahjongTileSVG = function(index, sizeClass = "w-10 h-12") {
+            const tiles = [
+                { text: "東", color: "#1d4ed8", name: "東風" }, // 0
+                { text: "南", color: "#b91c1c", name: "南風" }, // 1
+                { text: "西", color: "#b91c1c", name: "西風" }, // 2
+                { text: "北", color: "#047857", name: "北風" }, // 3
+                { text: "中", color: "#dc2626", name: "紅中" }, // 4
+                { text: "發", color: "#059669", name: "發財" }, // 5
+                { text: "白", color: "#2563eb", name: "白板", isBak: true }, // 6
+                { text: "索1", color: "#059669", name: "一索", isBird: true }, // 7
+                { text: "索9", color: "", name: "九索", isNineBamboo: true }, // 8
+                { text: "筒1", color: "#2563eb", name: "一筒", isDot: true }, // 9
+                { text: "筒9", color: "", name: "九筒", isNineDot: true }, // 10
+                { text: "萬1", color: "#2563eb", name: "一萬", isOneWan: true }, // 11
+                { text: "萬9", color: "#dc2626", name: "九萬", isNineWan: true } // 12
+            ];
+            
+            const tile = tiles[index] || tiles[0];
+            
+            let innerSymbol = `<text x="50" y="80" font-family="'Noto Sans TC', sans-serif" font-weight="900" font-size="52" fill="${tile.color}" text-anchor="middle">${tile.text}</text>`;
+            
+            if (tile.isBak) {
+                innerSymbol = `
+                    <rect x="22" y="25" width="56" height="80" rx="6" fill="none" stroke="${tile.color}" stroke-width="8"/>
+                    <rect x="32" y="35" width="36" height="60" rx="3" fill="none" stroke="${tile.color}" stroke-dasharray="8 4" stroke-width="2"/>
+                `;
+            } else if (tile.isBird) {
+                innerSymbol = `
+                    <path d="M50 30 C35 30, 30 45, 35 60 C32 65, 35 75, 45 75 C55 75, 58 65, 55 60 C60 45, 55 30, 50 30 Z" fill="${tile.color}"/>
+                    <path d="M50 30 L55 20 L58 25 Z" fill="#b91c1c"/>
+                    <circle cx="45" cy="45" r="4" fill="#ffffff"/>
+                    <circle cx="45" cy="45" r="2" fill="#000000"/>
+                    <path d="M40 75 L30 95" stroke="#059669" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M60 75 L70 95" stroke="#059669" stroke-width="4" stroke-linecap="round"/>
+                    <path d="M25 45 C15 45, 10 55, 20 60 Z" fill="#059669"/>
+                    <path d="M75 45 C85 45, 90 55, 80 60 Z" fill="#059669"/>
+                `;
+            } else if (tile.isDot) {
+                innerSymbol = `
+                    <circle cx="50" cy="65" r="32" fill="none" stroke="#dc2626" stroke-width="6"/>
+                    <circle cx="50" cy="65" r="24" fill="#2563eb"/>
+                    <circle cx="50" cy="65" r="12" fill="#f59e0b"/>
+                    <circle cx="50" cy="48" r="4" fill="#ffffff"/>
+                    <circle cx="50" cy="82" r="4" fill="#ffffff"/>
+                    <circle cx="33" cy="65" r="4" fill="#ffffff"/>
+                    <circle cx="67" cy="65" r="4" fill="#ffffff"/>
+                `;
+            } else if (tile.isNineBamboo) {
+                innerSymbol = `
+                    <rect x="22" y="22" width="10" height="22" rx="2" fill="#059669"/>
+                    <rect x="22" y="54" width="10" height="22" rx="2" fill="#059669"/>
+                    <rect x="22" y="86" width="10" height="22" rx="2" fill="#059669"/>
+                    <rect x="45" y="22" width="10" height="22" rx="2" fill="#dc2626"/>
+                    <rect x="45" y="54" width="10" height="22" rx="2" fill="#dc2626"/>
+                    <rect x="45" y="86" width="10" height="22" rx="2" fill="#dc2626"/>
+                    <rect x="68" y="22" width="10" height="22" rx="2" fill="#2563eb"/>
+                    <rect x="68" y="54" width="10" height="22" rx="2" fill="#2563eb"/>
+                    <rect x="68" y="86" width="10" height="22" rx="2" fill="#2563eb"/>
+                `;
+            } else if (tile.isNineDot) {
+                innerSymbol = `
+                    <circle cx="26" cy="32" r="8" fill="#2563eb"/>
+                    <circle cx="26" cy="65" r="8" fill="#2563eb"/>
+                    <circle cx="26" cy="98" r="8" fill="#2563eb"/>
+                    <circle cx="26" cy="32" r="2.5" fill="#fff"/>
+                    <circle cx="26" cy="65" r="2.5" fill="#fff"/>
+                    <circle cx="26" cy="98" r="2.5" fill="#fff"/>
+                    <circle cx="50" cy="32" r="8" fill="#dc2626"/>
+                    <circle cx="50" cy="65" r="8" fill="#dc2626"/>
+                    <circle cx="50" cy="98" r="8" fill="#dc2626"/>
+                    <circle cx="50" cy="32" r="2.5" fill="#fff"/>
+                    <circle cx="50" cy="65" r="2.5" fill="#fff"/>
+                    <circle cx="50" cy="98" r="2.5" fill="#fff"/>
+                    <circle cx="74" cy="32" r="8" fill="#059669"/>
+                    <circle cx="74" cy="65" r="8" fill="#059669"/>
+                    <circle cx="74" cy="98" r="8" fill="#059669"/>
+                    <circle cx="74" cy="32" r="2.5" fill="#fff"/>
+                    <circle cx="74" cy="65" r="2.5" fill="#fff"/>
+                    <circle cx="74" cy="98" r="2.5" fill="#fff"/>
+                `;
+            } else if (tile.isOneWan) {
+                innerSymbol = `
+                    <text x="50" y="52" font-family="'Noto Sans TC', sans-serif" font-weight="900" font-size="36" fill="#2563eb" text-anchor="middle">一</text>
+                    <text x="50" y="100" font-family="'Noto Sans TC', sans-serif" font-weight="900" font-size="44" fill="#dc2626" text-anchor="middle">萬</text>
+                `;
+            } else if (tile.isNineWan) {
+                innerSymbol = `
+                    <text x="50" y="52" font-family="'Noto Sans TC', sans-serif" font-weight="900" font-size="36" fill="#2563eb" text-anchor="middle">九</text>
+                    <text x="50" y="100" font-family="'Noto Sans TC', sans-serif" font-weight="900" font-size="44" fill="#dc2626" text-anchor="middle">萬</text>
+                `;
+            }
+
+            return `
+                <div class="${sizeClass} relative flex-shrink-0 select-none transform hover:-translate-y-0.5 active:translate-y-0 transition-transform duration-150 inline-block">
+                    <!-- Simplified Face Layer: Clean Flat Design -->
+                    <div class="absolute inset-0 bg-white rounded-lg border border-slate-200 p-0.5 flex items-center justify-center shadow-sm">
+                        <svg viewBox="0 0 100 130" class="w-full h-full">
+                            <rect x="6" y="6" width="88" height="118" rx="6" fill="none" stroke="#f8fafc" stroke-width="1.5"/>
+                            ${innerSymbol}
+                        </svg>
+                    </div>
+                </div>
+            `;
+        }
+
+        let friendsNames = [];
+        let friendsColorChoices = [];
+
+        // Temporary choices in modal
+        window.tempColorChoices = [];
+        let selectedAddPlayerTileIdx = 0; // New player default tile
+        let pendingDeleteIdx = null;     // Saved index waiting for custom confirm delete
+
+        // 2026 HK Public Holidays
+        const publicHolidays2026 = {
+            "2026-01-01": { name: "元旦", isHoliday: true },
+            "2026-02-17": { name: "農曆年初一", isHoliday: true },
+            "2026-02-18": { name: "農曆年初二", isHoliday: true },
+            "2026-02-19": { name: "農曆年初三", isHoliday: true },
+            "2026-04-03": { name: "耶穌受難節", isHoliday: true },
+            "2026-04-04": { name: "耶穌受難節翌日", isHoliday: true },
+            "2026-04-05": { name: "清明節", isHoliday: true },
+            "2026-04-06": { name: "復活節星期一", isHoliday: true },
+            "2026-04-07": { name: "清明節翌日", isHoliday: true },
+            "2026-05-01": { name: "勞動節", isHoliday: true },
+            "2026-05-24": { name: "佛誕", isHoliday: true },
+            "2026-05-25": { name: "佛誕翌日", isHoliday: true },
+            "2026-06-19": { name: "端午節", isHoliday: true },
+            "2026-07-01": { name: "香港特別行政區成立紀念日", isHoliday: true },
+            "2026-09-26": { name: "中秋節翌日", isHoliday: true },
+            "2026-10-01": { name: "國慶日", isHoliday: true },
+            "2026-10-19": { name: "重陽節", isHoliday: true },
+            "2026-12-25": { name: "聖誕節", isHoliday: true },
+            "2026-12-26": { name: "聖誕節後第一個周日", isHoliday: true }
+        };
+        
+        let monthlyAvailabilities = {};
+        let matchScores = {}; // 戰績結構: {"2026-06-15": {"0": 50, "1": -20, "2": -15, "3": -15}}
+
+        async function initialize() {
+               try {
+                console.log("正在嘗試以動態模組載入外部 firebaseconfig.js...");
+                let firebaseConfig = null;
+                try {
+                    const module = await import("./firebaseconfig.js");
+                    firebaseConfig = module.default;
+                    console.log("成功動態載入 firebaseconfig.js");
+                } catch (e) {
+                    console.warn("未能找到 firebaseconfig.js，程式將安全轉換至本地儲存模式。");
+                }
+
+                if (firebaseConfig && firebaseConfig.apiKey) {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            currentUser = user;
+                            updateConnectionIndicator(true);
+                            startRealtimeSync();
+                        } else {
+                            updateConnectionIndicator(false);
+                            showToast("連線中斷", "未能安全登入，請重試。", "error");
+                        }
+                    });
+                } else {
+                    setupLocalStorageFallback();
+                }
+
+            } catch (error) {
+                console.error("Firebase init failed, switching to local storage: ", error);
+                setupLocalStorageFallback();
+            }
+        }
+
+        function setupLocalStorageFallback() {
+            updateConnectionIndicator(false);
+            
+            const savedNames = localStorage.getItem(`${appId}-names`);
+            if (savedNames) friendsNames = JSON.parse(savedNames);
+            else friendsNames = []; // 預設 0 人
+            
+            const savedColors = localStorage.getItem(`${appId}-colors`);
+            if (savedColors) friendsColorChoices = JSON.parse(savedColors);
+            else friendsColorChoices = []; // 預設 0 人
+            
+            const savedAvails = localStorage.getItem(`${appId}-avails`);
+            if (savedAvails) monthlyAvailabilities = JSON.parse(savedAvails);
+
+            const savedScores = localStorage.getItem(`${appId}-scores`);
+            if (savedScores) matchScores = JSON.parse(savedScores);
+
+            renderFriendSelectors();
+            renderNicknameInputs();
+            renderCalendar();
+            renderSidebarStats();
+
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function updateConnectionIndicator(connected) {
+            const dot = document.getElementById('connection-indicator-dot');
+            const text = document.getElementById('connection-status-text');
+            if (connected) {
+                dot.className = "relative inline-flex rounded-full h-3 w-3 bg-brand-500";
+                text.innerText = "雲端同步中";
+                text.className = "text-xs font-semibold tracking-wide text-brand-500";
+            } else {
+                dot.className = "relative inline-flex rounded-full h-3 w-3 bg-amber-500";
+                text.innerText = "本地儲存模式";
+                text.className = "text-xs font-semibold tracking-wide text-amber-500";
+            }
+        }
+
+        function startRealtimeSync() {
+            if (!currentUser) return;
+
+            // 1. Sync Nicknames and Color selections
+            const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'friends');
+            onSnapshot(settingsDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    friendsNames = data.names || [];
+                    friendsColorChoices = data.colorChoices || [];
+                    
+                    // If previously selected index is now out of bounds due to deletion, reset active user selection
+                    if (activeFriendIndex !== null && activeFriendIndex >= friendsNames.length) {
+                        activeFriendIndex = null;
+                    }
+                    
+                    renderFriendSelectors();
+                    renderNicknameInputs();
+                    renderCalendar();
+                    renderSidebarStats();
+                } else {
+                    // Create empty doc in DB initially
+                    setDoc(settingsDocRef, { 
+                        names: friendsNames,
+                        colorChoices: friendsColorChoices 
+                    }).catch(e => console.error(e));
+                }
+            }, (error) => {
+                console.error("Nickname sync error: ", error);
+            });
+
+            // 2. Sync Date Availabilities
+            const availCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'availabilities');
+            onSnapshot(availCollectionRef, (querySnapshot) => {
+                const tempAvail = {};
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.date && Array.isArray(data.freeUsers)) {
+                        tempAvail[data.date] = data.freeUsers;
+                    }
+                });
+                monthlyAvailabilities = tempAvail;
+                
+                renderCalendar();
+                renderSidebarStats();
+                
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => overlay.style.display = 'none', 500);
+                }
+            }, (error) => {
+                console.error("Availability sync error: ", error);
+            });
+
+            // 3. Sync Match Win/Loss Scores
+            const scoresCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'scores');
+            onSnapshot(scoresCollectionRef, (querySnapshot) => {
+                const tempScores = {};
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.date && data.scores) {
+                        tempScores[data.date] = data.scores;
+                    }
+                });
+                matchScores = tempScores;
+                renderCalendar();
+                renderSidebarStats();
+            }, (error) => {
+                console.error("Scores sync error: ", error);
+            });
+        }
+
+        window.toggleAvailability = async function(dateStr) {
+            if (activeFriendIndex === null) {
+                showToast("未選取身份", "請先在上方選擇你是哪位雀友，才可以標記時間！🀄", "warning");
+                return;
+            }
+
+            const currentList = monthlyAvailabilities[dateStr] ? [...monthlyAvailabilities[dateStr]] : [];
+            const indexInList = currentList.indexOf(activeFriendIndex);
+            
+            if (indexInList > -1) {
+                currentList.splice(indexInList, 1);
+            } else {
+                currentList.push(activeFriendIndex);
+            }
+
+            monthlyAvailabilities[dateStr] = currentList;
+            
+            renderCalendar();
+            renderSidebarStats();
+
+            if (!db) {
+                localStorage.setItem(`${appId}-avails`, JSON.stringify(monthlyAvailabilities));
+                return;
+            }
+
+            const dateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'availabilities', dateStr);
+            try {
+                if (currentList.length === 0) {
+                    await deleteDoc(dateDocRef);
+                } else {
+                    await setDoc(dateDocRef, {
+                        date: dateStr,
+                        freeUsers: currentList,
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+            } catch (err) {
+                console.error("Error updating state: ", err);
+                showToast("同步失敗", "無法將時間同步至雲端。", "error");
+            }
+        }
+
+        window.saveNicknames = async function(event) {
+            event.preventDefault();
+            const inputs = document.querySelectorAll('.friend-name-input');
+            const newNames = [];
+            inputs.forEach(input => {
+                newNames.push(input.value.trim() || `雀友`);
+            });
+
+            friendsColorChoices = [...window.tempColorChoices];
+            friendsNames = newNames;
+
+            renderFriendSelectors();
+            renderCalendar();
+            renderSidebarStats();
+            closeNicknameModal();
+
+            if (!db) {
+                localStorage.setItem(`${appId}-names`, JSON.stringify(newNames));
+                localStorage.setItem(`${appId}-colors`, JSON.stringify(friendsColorChoices));
+                showToast("設定已儲存", "暱稱與專屬牌章已在本地儲存！✨", "success");
+                return;
+            }
+
+            try {
+                const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'friends');
+                await setDoc(settingsDocRef, { 
+                    names: newNames,
+                    colorChoices: friendsColorChoices
+                });
+                showToast("設定已同步", "各位雀友名字與專屬章牌已同步至雲端！✨", "success");
+            } catch (err) {
+                console.error("Failed to update: ", err);
+                showToast("更新失敗", "未能寫入雲端設定。", "error");
+            }
+        }
+
+        function renderFriendSelectors() {
+            const container = document.getElementById('friend-selector-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // 如果目前 0 雀友，顯示一個極簡友好的導引提示
+            if (friendsNames.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-6 text-center text-slate-400 text-xs flex flex-col items-center justify-center gap-2">
+                        <span class="text-3xl">🀄</span>
+                        <p class="font-bold text-slate-500 text-sm">目前此群組暫無雀友！</p>
+                        <p class="text-slate-400">請點選右上角「➕ 新增雀友」建立你和朋友的頭像章！</p>
+                    </div>
+                `;
+                return;
+            }
+
+            for (let i = 0; i < friendsNames.length; i++) {
+                const tileIndex = friendsColorChoices[i];
+                const isSelected = activeFriendIndex === i;
+                
+                const activeClasses = isSelected 
+                    ? `ring-4 ring-emerald-500 bg-emerald-50/50 text-slate-800 shadow-md border-transparent scale-[1.03] font-bold` 
+                    : `bg-white hover:bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300`;
+
+                const cardHtml = `
+                    <div onclick="setActiveFriend(${i})" class="relative group flex items-center space-x-3 p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer ${activeClasses}">
+                        <div class="w-10 h-12 flex-shrink-0">
+                            ${window.getMahjongTileSVG(tileIndex, "w-10 h-12")}
+                        </div>
+                        <div class="truncate flex-1">
+                            <span class="block text-[10px] text-slate-400 font-medium tracking-wide">雀友 ${i + 1}</span>
+                            <span class="block text-sm font-black truncate">${friendsNames[i]}</span>
+                        </div>
+                        ${isSelected ? `<i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i>` : ''}
+                        
+                        <!-- ✕ 刪除雀友小按鈕 (限制在非點擊穿透) -->
+                        <button onclick="event.stopPropagation(); requestDeletePlayer(${i})" 
+                                class="absolute -top-1.5 -right-1.5 bg-rose-500 hover:bg-rose-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] shadow-sm transition hover:scale-110 opacity-100 sm:opacity-0 sm:group-hover:opacity-100" 
+                                title="刪除此雀友">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            }
+        }
+
+        window.setActiveFriend = function(index) {
+            activeFriendIndex = index;
+            renderFriendSelectors();
+            renderCalendar();
+        };
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const labelMonthYear = document.getElementById('calendar-month-year');
+            if (!grid || !labelMonthYear) return;
+
+            grid.innerHTML = '';
+
+            const year = currentYearMonth.getFullYear();
+            const month = currentYearMonth.getMonth(); // 0-indexed
+
+            labelMonthYear.innerHTML = `<span class="mr-2">🀄</span> ${year}年 ${month + 1}月`;
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const prevMonthDays = new Date(year, month, 0).getDate();
+
+            // Render padding days from previous month
+            for (let i = firstDayOfMonth - 1; i >= 0; i--) {
+                const dayNum = prevMonthDays - i;
+                const dummyHtml = `
+                    <div class="bg-slate-50/50 text-slate-300 rounded-xl p-2 min-h-[76px] sm:min-h-[104px] text-xs border border-slate-100 flex flex-col justify-between opacity-50 select-none cursor-not-allowed">
+                        <span class="font-semibold">${dayNum}</span>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', dummyHtml);
+            }
+
+            // Render days of the month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cellDateObj = new Date(year, month, day);
+                const dayOfWeek = cellDateObj.getDay(); 
+                
+                const isToday = year === hkYear && month === hkMonth && day === hkDay;
+                const isPast = cellDateObj < todayDateObj && !isToday;
+
+                const attendees = monthlyAvailabilities[dateStr] || [];
+                const dayScores = matchScores[dateStr] || null;
+                
+                // 4 or more players make a perfect table
+                const isPerfect = attendees.length >= 4;
+                const hasAttendees = attendees.length > 0;
+                const isActiveUserFree = activeFriendIndex !== null && attendees.includes(activeFriendIndex);
+
+                const holidayInfo = publicHolidays2026[dateStr];
+                const isRedDay = holidayInfo && holidayInfo.isHoliday;
+                const isSunday = dayOfWeek === 0;
+                const holidayLabel = holidayInfo ? holidayInfo.name : "";
+
+                let cellBgClass = "bg-white hover:bg-slate-50 border-slate-200 text-slate-800";
+                
+                let dayNumberColor = "text-slate-800";
+                if (isRedDay || isSunday) {
+                    dayNumberColor = "text-red-500 font-extrabold";
+                }
+
+                if (isPerfect) {
+                    cellBgClass = "perfect-day-glow transition-all duration-300 transform scale-[1.01]";
+                    dayNumberColor = (isRedDay || isSunday) ? "text-red-600 font-black" : "text-emerald-700 font-extrabold";
+                } else if (hasAttendees) {
+                    cellBgClass = "bg-emerald-50/20 border-emerald-200/80 hover:bg-emerald-50/40";
+                    dayNumberColor = (isRedDay || isSunday) ? "text-red-600 font-black" : "text-emerald-700 font-bold";
+                }
+
+                let todayBadgeHtml = '';
+                if (isToday) {
+                    cellBgClass = "bg-emerald-50/50 border-emerald-500 ring-2 ring-emerald-400 ring-offset-1";
+                    todayBadgeHtml = `<span class="bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md animate-bounce-subtle">今日</span>`;
+                }
+
+                let pastStyleClass = '';
+                if (isPast) {
+                    pastStyleClass = 'opacity-50 saturate-50 bg-slate-50 border-slate-100 text-slate-400';
+                    if (isSunday || isRedDay) {
+                        dayNumberColor = "text-red-400/80 font-bold";
+                    } else {
+                        dayNumberColor = "text-slate-400";
+                    }
+                }
+
+                const userIndicator = isActiveUserFree ? 'ring-2 ring-emerald-500/20 bg-emerald-50/20' : '';
+
+                // NEW: Render beautiful landscape pills with both Mahjong tiles and player names
+                let badgesHtml = '';
+                if (attendees.length > 0) {
+                    badgesHtml = '<div class="flex flex-col gap-1 mt-1.5 w-full">';
+                    const sortedAttendees = [...attendees].sort((a, b) => a - b);
+                    sortedAttendees.forEach(idx => {
+                        const tileIdx = friendsColorChoices[idx];
+                        const name = friendsNames[idx] || '雀友';
+                        if (tileIdx !== undefined) {
+                            // 根據當天是否成團 (isPerfect) 靈活調整小膠囊底色，維持極佳的視覺對比度
+                            const pillBgClass = isPerfect 
+                                ? 'bg-white/95 border-emerald-300/80 text-emerald-950 shadow-sm' 
+                                : 'bg-slate-50/90 border-slate-200/80 text-slate-700 shadow-xs';
+
+                            badgesHtml += `
+                                <div class="flex items-center gap-1 border rounded-lg p-0.5 pr-1.5 truncate max-w-full ${pillBgClass}" title="${name} 想打">
+                                    <div class="flex-shrink-0" style="width: 16px; height: 20.8px;">
+                                        ${window.getMahjongTileSVG(tileIdx, "w-full h-full")}
+                                    </div>
+                                    <span class="text-[9px] sm:text-[10px] font-extrabold truncate tracking-tight leading-none">${name}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                    badgesHtml += '</div>';
+                }
+
+                let holidayHtml = '';
+                if (holidayInfo) {
+                    const labelColorClass = isRedDay ? "text-red-500 font-bold" : "text-emerald-600 font-extrabold bg-emerald-50 px-1 py-0.5 rounded text-[9px]";
+                    holidayHtml = `<span class="${labelColorClass} block text-[9px] mt-0.5 truncate max-w-[80px]" title="${holidayLabel}">${holidayLabel}</span>`;
+                }
+
+                let headerStatus = '';
+                if (isPerfect) {
+                    headerStatus = `<span class="text-emerald-600 animate-pulse text-[11px] font-extrabold flex items-center gap-0.5"><span class="font-serif">🀄</span> 開枱啦!</span>`;
+                } else if (attendees.length > 0) {
+                    headerStatus = `<span class="text-slate-400 text-[10px]">${attendees.length}/4 齊腳</span>`;
+                }
+
+                // Show indicator if score bookkeeping already entered
+                let scoreIndicatorHtml = '';
+                if (dayScores) {
+                    let scoreSummary = Object.entries(dayScores)
+                        .filter(([_, score]) => score !== 0) // 只顯示有分數變動的雀友
+                        .sort((a, b) => b[1] - a[1]) // 贏分多的在前面
+                        .slice(0, 4) // 最多顯示4位
+                        .map(([pIdx, score]) => {
+                            const name = friendsNames[pIdx] || '雀友';
+                            const color = score > 0 ? 'text-emerald-600' : 'text-rose-600';
+                            return `<div class="flex justify-between items-center text-[8px] border-b border-slate-100 last:border-0 px-1 py-0.5">
+                                        <span class="truncate w-12 font-bold">${name}</span>
+                                        <span class="font-black ${color}">${score > 0 ? '+' : ''}${score}</span>
+                                    </div>`;
+                        }).join('');
+                    
+                    scoreIndicatorHtml = `
+                        <div class="mt-2 bg-slate-50 rounded-lg border border-slate-200 p-1 shadow-sm overflow-hidden">
+                            <div class="text-[8px] font-bold text-slate-400 mb-0.5 text-center bg-white rounded-sm">📊 戰績摘要</div>
+                            ${scoreSummary || '<div class="text-[8px] text-center text-slate-400 italic">無人輸贏</div>'}
+                        </div>
+                    `;
+                }
+
+                const dayHtml = `
+                    <div onclick="toggleAvailability('${dateStr}')" 
+                         class="cursor-pointer border rounded-2xl p-2 min-h-[76px] sm:min-h-[104px] flex flex-col justify-between transition-all duration-200 select-none relative ${cellBgClass} ${userIndicator} ${pastStyleClass} group hover:shadow-sm">
+                        
+                        <div class="flex items-start justify-between">
+                            <div class="flex flex-col">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-sm font-bold tracking-tight ${dayNumberColor}">${day}</span>
+                                    ${todayBadgeHtml}
+                                </div>
+                                ${holidayHtml}
+                            </div>
+                            ${headerStatus}
+                        </div>
+
+                        <div class="mt-auto">
+                            ${badgesHtml}
+                        </div>
+
+                        ${scoreIndicatorHtml}
+                        
+                        <div class="absolute inset-0 bg-slate-900/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity flex items-center justify-center pointer-events-none">
+                            <span class="text-[9px] font-bold bg-white/95 px-2 py-1 rounded-md text-slate-600 shadow-sm border border-slate-200 flex items-center gap-1">
+                                <i class="fa-solid fa-hand-pointer text-emerald-500"></i> ${isActiveUserFree ? '取消' : '想打'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', dayHtml);
+            }
+
+            const totalCellsRendered = firstDayOfMonth + daysInMonth;
+            const remainingGridSlots = 42 - totalCellsRendered;
+            const daysToDraw = remainingGridSlots >= 7 ? remainingGridSlots - 7 : remainingGridSlots;
+
+            for (let i = 1; i <= daysToDraw; i++) {
+                const dummyHtml = `
+                    <div class="bg-slate-50/50 text-slate-300 rounded-xl p-2 min-h-[76px] sm:min-h-[104px] text-xs border border-slate-100 flex flex-col justify-between opacity-50 select-none cursor-not-allowed">
+                        <span class="font-semibold">${i}</span>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', dummyHtml);
+            }
+        }
+
+        window.navigateMonth = function(direction) {
+            currentYearMonth.setMonth(currentYearMonth.getMonth() + direction);
+            renderCalendar();
+            renderSidebarStats();
+        }
+
+        function renderSidebarStats() {
+            const perfectDatesContainer = document.getElementById('perfect-dates-list');
+            if (!perfectDatesContainer) return;
+
+            const year = currentYearMonth.getFullYear();
+            const month = currentYearMonth.getMonth();
+            const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+            
+            const perfectDays = [];
+
+            Object.keys(monthlyAvailabilities).forEach(dateStr => {
+                if (dateStr.startsWith(prefix)) {
+                    const attendees = monthlyAvailabilities[dateStr] || [];
+                    // 4 players make a perfect table
+                    if (attendees.length >= 4) {
+                        perfectDays.push({ dateStr, count: attendees.length });
+                    }
+                }
+            });
+
+            // Render Golden Days List
+            perfectDatesContainer.innerHTML = '';
+            if (perfectDays.length === 0) {
+                perfectDatesContainer.innerHTML = `
+                    <div class="flex items-center space-x-2 text-slate-400 text-sm py-4">
+                        <i class="fa-solid fa-calendar-xmark text-lg"></i>
+                        <span>本月暫時未有足夠4人成團的日子，快點去標記你的時間啦！</span>
+                    </div>
+                `;
+            } else {
+                perfectDays.sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+                perfectDays.forEach(item => {
+                    const { dateStr, count } = item;
+                    const dayParts = dateStr.split('-');
+                    const displayDate = `${dayParts[1]}月${dayParts[2]}日`;
+                    const dayOfWeekText = getHKDayOfWeek(new Date(dateStr));
+                    const isRecorded = !!matchScores[dateStr];
+
+                    const btnRecordText = isRecorded ? '✏️ 修改戰績' : '📝 記帳';
+                    const btnRecordClass = isRecorded 
+                        ? 'text-blue-300 border-blue-400/20 hover:border-white' 
+                        : 'text-emerald-300 border-emerald-400/20 hover:border-white';
+
+                    const dateBadgeHtml = `
+                        <div class="bg-white/10 hover:bg-white/15 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5 transition duration-200 relative z-10">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="bg-emerald-400 text-slate-900 rounded-lg p-1.5 text-xs font-black">
+                                        🀄 ${count}人
+                                    </div>
+                                    <div>
+                                        <span class="block text-sm font-extrabold text-white tracking-wide">${displayDate}</span>
+                                        <span class="block text-xs text-emerald-300 font-medium">${dayOfWeekText}</span>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1.5">
+                                    <button onclick="openScoreModal('${dateStr}')" class="text-xs transition flex items-center gap-1 border px-2.5 py-1 rounded-lg font-bold ${btnRecordClass}">
+                                        ${btnRecordText}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    perfectDatesContainer.insertAdjacentHTML('beforeend', dateBadgeHtml);
+                });
+            }
+
+            renderCumulativeLeaderboard();
+        }
+
+        function renderCumulativeLeaderboard() {
+            const container = document.getElementById('leaderboard-container');
+            if (!container) return;
+
+            // Initialize total score array for active players
+            const cumulativeScores = Array.from({ length: friendsNames.length }, (_, idx) => ({
+                index: idx,
+                name: friendsNames[idx],
+                tileIndex: friendsColorChoices[idx],
+                total: 0,
+                gamesPlayed: 0
+            }));
+
+            // Sum up scores ONLY from match days of the selected month
+            const year = currentYearMonth.getFullYear();
+            const month = currentYearMonth.getMonth();
+            const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+            Object.entries(matchScores).forEach(([dateStr, scoresObj]) => {
+                if (dateStr.startsWith(prefix) && scoresObj) {
+                    Object.entries(scoresObj).forEach(([pIdx, score]) => {
+                        const idx = parseInt(pIdx, 10);
+                        if (idx >= 0 && idx < friendsNames.length) {
+                            cumulativeScores[idx].total += score;
+                            if (score !== 0) {
+                                cumulativeScores[idx].gamesPlayed++;
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Sort players: Highest score to lowest score
+            const sortedLeaderboard = [...cumulativeScores].sort((a, b) => b.total - a.total);
+
+            container.innerHTML = '';
+
+            if (friendsNames.length === 0) {
+                container.innerHTML = `<div class="text-slate-400 text-xs italic py-4">無雀友數據，排行榜暫無內容。</div>`;
+                return;
+            }
+
+            sortedLeaderboard.forEach((player, rank) => {
+                const isPositive = player.total > 0;
+                const isNegative = player.total < 0;
+
+                let scoreColorClass = 'text-slate-500 font-bold';
+                let scorePrefix = '';
+                if (isPositive) {
+                    scoreColorClass = 'text-emerald-600 font-black';
+                    scorePrefix = '+';
+                } else if (isNegative) {
+                    scoreColorClass = 'text-rose-600 font-black';
+                }
+
+                // Add interesting mahjong badges based on rank and score
+                let badgeHtml = '';
+                if (rank === 0 && player.total > 0) {
+                    badgeHtml = `<span class="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5"><i class="fa-solid fa-crown text-amber-500"></i> 雀神</span>`;
+                } else if (rank === sortedLeaderboard.length - 1 && player.total < 0) {
+                    badgeHtml = `<span class="bg-rose-100 text-rose-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5"><i class="fa-solid fa-face-frown"></i> 避戰王</span>`;
+                } else if (player.gamesPlayed === 0) {
+                    badgeHtml = `<span class="bg-slate-100 text-slate-400 text-[9px] px-1.5 py-0.5 rounded">未開齋</span>`;
+                }
+
+                const playerRowHtml = `
+                    <div class="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition border border-transparent hover:border-slate-100">
+                        <div class="flex items-center space-x-2.5 min-w-0">
+                            <span class="text-xs font-black text-slate-400 w-4 text-center">${rank + 1}</span>
+                            <div class="scale-50 origin-center -ml-2 -mr-3">
+                                ${window.getMahjongTileSVG(player.tileIndex, "w-8 h-10")}
+                            </div>
+                            <div class="min-w-0 truncate">
+                                <span class="block text-xs font-bold text-slate-800 truncate">${player.name}</span>
+                                <span class="block text-[9px] text-slate-400 font-medium">${player.gamesPlayed} 場戰績</span>
+                            </div>
+                            ${badgeHtml}
+                        </div>
+                        <div class="${scoreColorClass} text-sm whitespace-nowrap">
+                            ${scorePrefix}${player.total}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', playerRowHtml);
+            });
+        }
+
+        function getHKDayOfWeek(dateObj) {
+            const days = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+            return days[dateObj.getDay()];
+        }
+
+        window.openNicknameModal = function() {
+            window.tempColorChoices = [...friendsColorChoices];
+            renderNicknameInputs();
+
+            const modal = document.getElementById('nickname-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.bg-white').classList.remove('scale-95');
+            }, 50);
+        }
+
+        window.closeNicknameModal = function() {
+            const modal = document.getElementById('nickname-modal');
+            modal.querySelector('.bg-white').classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        window.selectModalColor = function(friendIdx, colorIdx) {
+            window.tempColorChoices[friendIdx] = colorIdx;
+            renderNicknameInputs();
+        }
+
+        function renderNicknameInputs() {
+            const container = document.getElementById('nickname-inputs-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (friendsNames.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-400 text-sm py-8">目前暫無雀友，請先點擊新增！</p>`;
+                return;
+            }
+
+            for (let i = 0; i < friendsNames.length; i++) {
+                const activeColorIdx = window.tempColorChoices[i];
+
+                let colorPaletteHtml = '<div class="flex flex-wrap gap-2 mt-2 select-none justify-start">';
+                for (let tileIdx = 0; tileIdx < 13; tileIdx++) {
+                    const isSelected = activeColorIdx === tileIdx;
+                    colorPaletteHtml += `
+                        <button type="button" onclick="selectModalColor(${i}, ${tileIdx})"
+                                class="transition-all duration-150 transform hover:scale-115 active:scale-90 focus:outline-none relative ${isSelected ? 'scale-125 ring-2 ring-emerald-500 rounded-lg p-0.5' : 'opacity-70 hover:opacity-100'}">
+                            ${window.getMahjongTileSVG(tileIdx, "w-8 h-10")}
+                            ${isSelected ? '<span class="absolute top-0 right-0 w-3 h-3 bg-emerald-500 rounded-full flex items-center justify-center text-[7px] text-white font-bold">✓</span>' : ''}
+                        </button>
+                    `;
+                }
+                colorPaletteHtml += '</div>';
+
+                const inputHtml = `
+                    <div class="flex flex-col bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-12 flex-shrink-0">
+                                ${window.getMahjongTileSVG(activeColorIdx, "w-10 h-12")}
+                            </div>
+                            <div class="flex-grow">
+                                <label class="block text-[10px] text-slate-400 font-bold uppercase tracking-wider">雀友 ${i + 1} 暱稱</label>
+                                <input type="text" value="${friendsNames[i]}" required
+                                       class="friend-name-input bg-transparent text-sm font-bold text-slate-700 focus:outline-none focus:ring-0 w-full border-b border-slate-200 py-0.5" 
+                                       placeholder="輸入雀友名字...">
+                            </div>
+                        </div>
+                        
+                        <div class="pt-1">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">選取你的本命牌章：</span>
+                            ${colorPaletteHtml}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', inputHtml);
+            }
+        }
+
+        window.openScoreModal = function(dateStr) {
+            const dateParts = dateStr.split('-');
+            const displayDate = `${dateParts[0]}年${dateParts[1]}月${dateParts[2]}日`;
+            document.getElementById('score-modal-date').innerText = `📅 ${displayDate}`;
+            document.getElementById('score-modal-date-val').value = dateStr;
+
+            const container = document.getElementById('score-inputs-container');
+            container.innerHTML = '';
+
+            const attendees = monthlyAvailabilities[dateStr] || [];
+            const currentScores = matchScores[dateStr] || {};
+
+            for (let i = 0; i < friendsNames.length; i++) {
+                const isAttendee = attendees.includes(i);
+                const tileIdx = friendsColorChoices[i];
+                const scoreVal = currentScores[i] !== undefined ? currentScores[i] : 0;
+
+                const rowBgClass = isAttendee ? 'bg-emerald-50/50 border-emerald-200/60 ring-1 ring-emerald-400/20' : 'bg-slate-50 border-slate-100 opacity-60';
+
+                const playerRowHtml = `
+                    <div class="flex items-center justify-between p-3.5 rounded-2xl border transition-all ${rowBgClass}">
+                        <div class="flex items-center space-x-3 min-w-0">
+                            <div class="w-10 h-12 flex-shrink-0">
+                                ${window.getMahjongTileSVG(tileIdx, "w-10 h-12")}
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-sm font-black text-slate-800 truncate block">${friendsNames[i]}</span>
+                                    ${isAttendee ? '<span class="bg-emerald-100 text-emerald-800 text-[8px] font-black px-1 py-0.5 rounded">當天已出席</span>' : ''}
+                                </div>
+                                <span class="text-[10px] text-slate-400">雀友 ${i + 1}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <!-- Quick action presets -->
+                            <button type="button" onclick="modifyPlayerScore(${i}, -100)" class="text-[10px] bg-slate-200 hover:bg-slate-300 px-1.5 py-1 rounded text-slate-600 font-bold">-100</button>
+                            <button type="button" onclick="modifyPlayerScore(${i}, -10)" class="text-[10px] bg-slate-200 hover:bg-slate-300 px-1.5 py-1 rounded text-slate-600 font-bold">-10</button>
+                            
+                            <input type="number" 
+                                   id="score-input-${i}" 
+                                   value="${scoreVal}"
+                                   oninput="updateLiveScoreSum()"
+                                   class="score-input-field w-20 text-center font-black text-sm border border-slate-200 rounded-xl px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-400 text-slate-800"
+                                   placeholder="0">
+                                   
+                            <button type="button" onclick="modifyPlayerScore(${i}, 10)" class="text-[10px] bg-slate-200 hover:bg-slate-300 px-1.5 py-1 rounded text-slate-600 font-bold">+10</button>
+                            <button type="button" onclick="modifyPlayerScore(${i}, 100)" class="text-[10px] bg-slate-200 hover:bg-slate-300 px-1.5 py-1 rounded text-slate-600 font-bold">+100</button>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', playerRowHtml);
+            }
+
+            const modal = document.getElementById('score-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.bg-white').classList.remove('scale-95');
+            }, 50);
+
+            updateLiveScoreSum();
+        }
+
+        window.closeScoreModal = function() {
+            const modal = document.getElementById('score-modal');
+            modal.querySelector('.bg-white').classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        window.modifyPlayerScore = function(friendIdx, val) {
+            const input = document.getElementById(`score-input-${friendIdx}`);
+            if (input) {
+                let currentVal = parseInt(input.value, 10) || 0;
+                input.value = currentVal + val;
+                updateLiveScoreSum();
+            }
+        }
+
+        window.resetAllScoresInModal = function() {
+            const inputs = document.querySelectorAll('.score-input-field');
+            inputs.forEach(input => {
+                input.value = 0;
+            });
+            updateLiveScoreSum();
+        }
+
+        window.updateLiveScoreSum = function() {
+            const inputs = document.querySelectorAll('.score-input-field');
+            let total = 0;
+            inputs.forEach(input => {
+                total += parseInt(input.value, 10) || 0;
+            });
+
+            const indicator = document.getElementById('live-sum-indicator');
+            if (total === 0) {
+                indicator.className = "font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800";
+                indicator.innerHTML = "🟢 剛好平帳！(總和為 0)";
+            } else {
+                indicator.className = "font-bold px-2.5 py-1 rounded-lg bg-rose-100 text-rose-800 animate-pulse";
+                indicator.innerHTML = `⚠️ 目前總和: ${total > 0 ? '+' : ''}${total} (平帳應為 0)`;
+            }
+        }
+
+        window.saveScores = async function(event) {
+            event.preventDefault();
+            const dateStr = document.getElementById('score-modal-date-val').value;
+            
+            const scoresObj = {};
+            let sumCheck = 0;
+
+            for (let i = 0; i < friendsNames.length; i++) {
+                const val = parseInt(document.getElementById(`score-input-${i}`).value, 10) || 0;
+                scoresObj[String(i)] = val;
+                sumCheck += val;
+            }
+
+            // Optional warning if bookkeeping doesn't balance
+            if (sumCheck !== 0) {
+                showToast("記帳不平衡", "溫馨提示：大家輸贏總分合計不等於 0 喔！請雙重檢查是否有記錯數！", "warning");
+            }
+
+            matchScores[dateStr] = scoresObj;
+
+            renderCalendar();
+            renderSidebarStats();
+            closeScoreModal();
+
+            if (!db) {
+                localStorage.setItem(`${appId}-scores`, JSON.stringify(matchScores));
+                showToast("戰績已保存", "輸贏結果已在本地保存！✨", "success");
+                return;
+            }
+
+            try {
+                const scoreDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'scores', dateStr);
+                await setDoc(scoreDocRef, {
+                    date: dateStr,
+                    scores: scoresObj,
+                    updatedAt: new Date().toISOString()
+                });
+                showToast("戰績同步成功", "本次開枱日戰績已實時更新至雲端！🀄", "success");
+            } catch (err) {
+                console.error("Failed to update scores: ", err);
+                showToast("儲存失敗", "無法將分數同步至雲端。", "error");
+            }
+        }
+
+        window.openAddPlayerModal = function() {
+            if (friendsNames.length >= 20) {
+                showToast("已達上限", "雀友數量已達系統後台 20 人上限，無法再新增！", "error");
+                return;
+            }
+            selectedAddPlayerTileIdx = 0;
+            document.getElementById('add-player-name-input').value = '';
+            renderAddPlayerTileGrid();
+
+            const modal = document.getElementById('add-player-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.bg-white').classList.remove('scale-95');
+            }, 50);
+        }
+
+        window.closeAddPlayerModal = function() {
+            const modal = document.getElementById('add-player-modal');
+            modal.querySelector('.bg-white').classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        window.selectAddPlayerTile = function(idx) {
+            selectedAddPlayerTileIdx = idx;
+            renderAddPlayerTileGrid();
+        }
+
+        function renderAddPlayerTileGrid() {
+            const container = document.getElementById('add-player-tile-grid');
+            if (!container) return;
+            container.innerHTML = '';
+
+            for (let tileIdx = 0; tileIdx < 13; tileIdx++) {
+                const isSelected = selectedAddPlayerTileIdx === tileIdx;
+                const html = `
+                    <button type="button" onclick="selectAddPlayerTile(${tileIdx})"
+                            class="transition-all duration-150 transform hover:scale-115 active:scale-90 focus:outline-none relative ${isSelected ? 'scale-125 ring-2 ring-emerald-500 rounded-lg p-0.5' : 'opacity-70 hover:opacity-100'}">
+                        ${window.getMahjongTileSVG(tileIdx, "w-8 h-10")}
+                        ${isSelected ? '<span class="absolute top-0 right-0 w-3 h-3 bg-emerald-500 rounded-full flex items-center justify-center text-[7px] text-white font-bold">✓</span>' : ''}
+                    </button>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            }
+        }
+
+        window.executeAddPlayer = async function(event) {
+            event.preventDefault();
+            const nameInput = document.getElementById('add-player-name-input');
+            const name = nameInput.value.trim();
+
+            if (!name) return;
+
+            friendsNames.push(name);
+            friendsColorChoices.push(selectedAddPlayerTileIdx);
+
+            renderFriendSelectors();
+            renderCalendar();
+            renderSidebarStats();
+            closeAddPlayerModal();
+
+            if (!db) {
+                localStorage.setItem(`${appId}-names`, JSON.stringify(friendsNames));
+                localStorage.setItem(`${appId}-colors`, JSON.stringify(friendsColorChoices));
+                showToast("新增成功", `已在本地新增雀友「${name}」！`, "success");
+                return;
+            }
+
+            try {
+                const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'friends');
+                await setDoc(settingsDocRef, { 
+                    names: friendsNames,
+                    colorChoices: friendsColorChoices
+                });
+                showToast("新增成功", `已成功同步新增雀友「${name}」至雲端！`, "success");
+            } catch (err) {
+                console.error("Failed to add player: ", err);
+                showToast("建立失敗", "無法同步更新雀友名單。", "error");
+            }
+        }
+
+        window.requestDeletePlayer = function(index) {
+            pendingDeleteIdx = index;
+            const name = friendsNames[index];
+            document.getElementById('confirm-delete-name').innerText = name;
+
+            const modal = document.getElementById('custom-confirm-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.bg-white').classList.remove('scale-95');
+            }, 50);
+        }
+
+        window.closeConfirmModal = function() {
+            const modal = document.getElementById('custom-confirm-modal');
+            modal.querySelector('.bg-white').classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                pendingDeleteIdx = null;
+            }, 300);
+        }
+
+        window.executeDeletePlayer = async function() {
+            if (pendingDeleteIdx === null) return;
+            const targetIdx = pendingDeleteIdx;
+            const deletedName = friendsNames[targetIdx];
+
+            // 1. 從本地陣列中剔除
+            friendsNames.splice(targetIdx, 1);
+            friendsColorChoices.splice(targetIdx, 1);
+
+            // 2. 核心 Index-Shifting 演算法：清理所有有空日期 (availabilities) 中的 Index
+            Object.keys(monthlyAvailabilities).forEach(dateStr => {
+                const list = monthlyAvailabilities[dateStr] || [];
+                const shiftedList = list
+                    .filter(idx => idx !== targetIdx)
+                    .map(idx => idx > targetIdx ? idx - 1 : idx);
+                
+                monthlyAvailabilities[dateStr] = shiftedList;
+            });
+
+            // 3. 核心 Index-Shifting 演算法：清理所有 matchScores 戰績對應的 Index
+            Object.keys(matchScores).forEach(dateStr => {
+                const scoresObj = matchScores[dateStr];
+                if (scoresObj) {
+                    const shiftedScores = {};
+                    Object.keys(scoresObj).forEach(keyStr => {
+                        const idx = parseInt(keyStr, 10);
+                        if (idx !== targetIdx) {
+                            const shiftedIdx = idx > targetIdx ? idx - 1 : idx;
+                            shiftedScores[String(shiftedIdx)] = scoresObj[keyStr];
+                        }
+                    });
+                    matchScores[dateStr] = shiftedScores;
+                }
+            });
+
+            // 4. 重設選取狀態
+            if (activeFriendIndex === targetIdx) {
+                activeFriendIndex = null;
+            } else if (activeFriendIndex > targetIdx) {
+                activeFriendIndex -= 1;
+            }
+
+            renderFriendSelectors();
+            renderCalendar();
+            renderSidebarStats();
+            closeConfirmModal();
+
+            // 5. 同步至雲端 (大量更新 Firebase)
+            if (!db) {
+                localStorage.setItem(`${appId}-names`, JSON.stringify(friendsNames));
+                localStorage.setItem(`${appId}-colors`, JSON.stringify(friendsColorChoices));
+                localStorage.setItem(`${appId}-avails`, JSON.stringify(monthlyAvailabilities));
+                localStorage.setItem(`${appId}-scores`, JSON.stringify(matchScores));
+                showToast("刪除成功", `雀友「${deletedName}」及歷史戰績已在本地完全清除！`, "success");
+                return;
+            }
+
+            try {
+                // 更新雀友基本名單
+                const settingsDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'friends');
+                await setDoc(settingsDocRef, { 
+                    names: friendsNames,
+                    colorChoices: friendsColorChoices
+                });
+
+                // 同步已被修改位移的有空日期
+                for (const dateStr of Object.keys(monthlyAvailabilities)) {
+                    const dateDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'availabilities', dateStr);
+                    const currentList = monthlyAvailabilities[dateStr] || [];
+                    if (currentList.length === 0) {
+                        await deleteDoc(dateDocRef);
+                    } else {
+                        await setDoc(dateDocRef, {
+                            date: dateStr,
+                            freeUsers: currentList,
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+                }
+
+                // 同步已被修改位移的歷史戰績
+                for (const dateStr of Object.keys(matchScores)) {
+                    const scoreDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'scores', dateStr);
+                    const scoresObj = matchScores[dateStr];
+                    if (scoresObj && Object.keys(scoresObj).length > 0) {
+                        await setDoc(scoreDocRef, {
+                            date: dateStr,
+                            scores: scoresObj,
+                            updatedAt: new Date().toISOString()
+                        });
+                    } else {
+                        await deleteDoc(scoreDocRef);
+                    }
+                }
+
+                showToast("徹底刪除", `已完成雲端同步，雀友「${deletedName}」的所有有空日期與歷史戰績已被完全抹除！`, "success");
+            } catch (err) {
+                console.error("Sync error during delete: ", err);
+                showToast("同步出錯", "部分雲端紀錄可能未能即時完成同步，建議重整網頁檢查。", "error");
+            }
+        }
+
+        function showToast(title, msg, type = "info") {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const id = 'toast-' + Math.random().toString(36).substring(2, 9);
+            
+            let icon = '<i class="fa-solid fa-circle-info text-emerald-500"></i>';
+            if (type === "success") {
+                icon = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+            } else if (type === "warning") {
+                icon = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i>';
+            } else if (type === "error") {
+                icon = '<i class="fa-solid fa-circle-xmark text-rose-500"></i>';
+            }
+
+            const toastHtml = `
+                <div id="${id}" class="bg-white rounded-2xl shadow-xl border border-slate-100 p-4 pointer-events-auto flex items-start space-x-3 transition-all duration-300 transform translate-y-2 opacity-0 select-none">
+                    <div class="text-lg mt-0.5">
+                        ${icon}
+                    </div>
+                    <div class="flex-1">
+                        <h5 class="text-xs font-black text-slate-800">${title}</h5>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-normal">${msg}</p>
+                    </div>
+                    <button onclick="document.getElementById('${id}').remove()" class="text-slate-300 hover:text-slate-500 transition">
+                        <i class="fa-solid fa-xmark text-sm"></i>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', toastHtml);
+
+            const el = document.getElementById(id);
+            setTimeout(() => {
+                if (el) el.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            setTimeout(() => {
+                if (el) {
+                    el.classList.add('opacity-0', 'translate-y-1');
+                    setTimeout(() => el.remove(), 300);
+                }
+            }, 4000);
+        }
+
+        window.onload = function() {
+            initialize();
+        }
+    </script>
+</body>
+</html>
