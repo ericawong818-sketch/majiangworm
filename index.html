@@ -352,7 +352,7 @@
         let currentUser = null;
         
         // 優先讀取環境變數中的 appId，如果沒有則使用預設值
-        let appId = typeof __app_id !== 'undefined' ? __app_id : 'mahjong-story-group-demo';
+        let appId = typeof __app_id !== 'undefined' ? __app_id : 'mahjong-story-cal-2026';
 
         // Dynamic State (Starting focus point)
         let currentYearMonth = new Date(2026, 5, 1); 
@@ -508,7 +508,7 @@
         let matchScores = {}; // 戰績結構: {"2026-06-15": {"0": 50, "1": -20, "2": -15, "3": -15}}
 
         async function initialize() {
-               try {
+                           try {
                 console.log("正在嘗試以動態模組載入外部 firebaseconfig.js...");
                 let firebaseConfig = null;
                 try {
